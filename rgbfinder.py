@@ -5,7 +5,6 @@ import win32ui
 import win32api
 import numpy as np
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 class RGBFinder:
@@ -39,8 +38,8 @@ class RGBFinder:
 			return cv2.imread("screencap.bmp"), w, h, None, None, None, None
 
 		rect = win32gui.GetWindowRect(hwnd)
-		self.x = rect[0]
-		self.y = rect[1]
+		self.x = x = rect[0]
+		self.y = y = rect[1]
 		self.vindictus_w = rect[2] - self.x
 		self.vindictus_h = rect[3] - self.y
 
@@ -69,35 +68,24 @@ class RGBFinder:
 		img.shape = (h, w, 4)
 		return img, x, y, left, top, w, h
 
-	def check_pixel(self, pixel, i, j):
-		[b, g, r] = pixel
-		for color in self.colors:
-			r_diff = abs(r - color[1])
-			g_diff = abs(g - color[2])
-			b_diff = abs(b - color[3])
-			tot_diff = r_diff + g_diff + b_diff
-			# print("x=",i,", y=",j,"(",int8(r),int8(g),int8(b),")",abs(int8(r) - color[1]),abs(int8(g) - color[2]),abs(int8(b) - color[3]))
-			#self.locks[color[0]].acquire()
-			if tot_diff < color[4]:
-				color[4] = tot_diff
-				color[5] = i
-				color[6] = j
-			#self.locks[color[0]].release()
+	def find_color(self, color, img):
+		b, g, r = cv2.split(img)
+		channels = [r, g, b]
+		diffs = []
+		for i in range(3):
+			diffs.append(cv2.absdiff(channels[2-i], color[i+1]))
+		dist = cv2.add(diffs[0], cv2.add(diffs[1], diffs[2]))
+		min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(dist)
+		color[5] = min_loc[0]
+		color[6] = min_loc[1]
 
 	def run(self):
 		img, w, h, x, y, left, top = self.get_screencap()
-		start = datetime.now()
 		print("Checking for colors")
-		
-		with ThreadPoolExecutor(max_workers=10) as ex:
-			for i in range(w):
-				for j in range(h):
-					ex.submit(self.check_pixel, img[j,i], i, j)
-		end = datetime.now()
-		duration = (end - start).total_seconds()
-		print("{}s elapsed".format(duration))
 		for color in self.colors:
-			print(color[0], "at(", color[5], ",", color[6], ")", img[color[6], color[5]])
+			self.find_color(color, img)
+		for color in self.colors:
+			print("{} at ({},{}) {}".format(color[0], color[5], color[6], img[color[6], color[5]]))
 
 		if x is not None:
 			uin = input("Enter the color: ")
