@@ -11,7 +11,6 @@ class Window(QWidget):
     def __init__(self):
         super(Window, self).__init__()
         self.setWindowTitle("Vindictus Dye Finder")
-        self.icon_path = 'resources\\dye_color_cash_white.png'
         self.image_label = None
         self.table = None
         self.layout = None
@@ -83,12 +82,11 @@ class Window(QWidget):
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.setFixedWidth(300)
 
-    def insert_colors(self, colors, img):
+    def insert_colors(self,colors):
         # ["black", 25, 25, 25, 765, 0, 0]
         for i in range(len(colors)):
             color = colors[i]
-            found_color = img[color[6], color[5]]
-            brush = QBrush(QColor(found_color[0], found_color[1], found_color[2], 255))
+            brush = QBrush(QColor(color[1],color[2],color[3],255))
             colored_item = QTableWidgetItem()
             colored_item.setBackground(brush)
             self.table.setItem(i, 0, colored_item)
@@ -121,7 +119,6 @@ class App:
     def run(self):
         app_ctx = ApplicationContext()
         window = Window()
-        app_ctx.app.setWindowIcon(QIcon(window.icon_path))
         rgb_finder = RGBFinder(window)
         rgb_finder.run()
         return app_ctx.app.exec_()

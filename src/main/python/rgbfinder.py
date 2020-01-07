@@ -91,7 +91,7 @@ class RGBFinder:
 					win32api.SetCursorPos((x+left+color[5], y+top+color[6]))
 
 		if self.gui is not None:
-			self.gui.insert_colors(self.colors, img)
+			self.gui.insert_colors(self.colors)
 		self.log("Done checking for colors")
 
 	def move_mouse(self, pix_x, pix_y):
